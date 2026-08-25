@@ -57,18 +57,22 @@ namespace GameRpg.Demo
 
         private static void EnsureCamera()
         {
-            if (Camera.main != null)
+            var camera = Camera.main;
+            if (camera == null)
             {
-                return;
+                var cameraGameObject = new GameObject("DemoCamera");
+                camera = cameraGameObject.AddComponent<Camera>();
+                camera.orthographic = true;
+                camera.orthographicSize = 6f;
+                cameraGameObject.tag = "MainCamera";
+                cameraGameObject.transform.rotation = Quaternion.Euler(35.264f, 45f, 0f);
+                cameraGameObject.transform.position = new Vector3(6f, 8f, -6f);
             }
 
-            var cameraGameObject = new GameObject("DemoCamera");
-            var camera = cameraGameObject.AddComponent<Camera>();
-            camera.orthographic = true;
-            camera.orthographicSize = 6f;
-            cameraGameObject.tag = "MainCamera";
-            cameraGameObject.transform.rotation = Quaternion.Euler(35.264f, 45f, 0f);
-            cameraGameObject.transform.position = new Vector3(6f, 8f, -6f);
+            if (camera.GetComponent<DemoCameraController>() == null)
+            {
+                camera.gameObject.AddComponent<DemoCameraController>();
+            }
         }
 
         private void BuildGrid()
@@ -196,15 +200,19 @@ namespace GameRpg.Demo
             titleText.fontSize = 18;
             titleText.fontStyle = FontStyle.Bold;
 
-            var bodyText = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.83f));
-            bodyText.fontSize = 15;
+            var bodyText = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.02f), new Vector2(0.95f, 0.83f));
+            bodyText.fontSize = 14;
             bodyText.alignment = TextAnchor.UpperLeft;
             bodyText.text =
                 "Clique em um tile\n  -> mover o personagem\n\n" +
                 "Botão Atacar\n  -> atacar o inimigo adjacente\n\n" +
                 "Botão Terminar Turno\n  -> passa o turno (a IA do\n     inimigo joga em seguida)\n\n" +
                 "Botão Fugir\n  -> tenta fugir do combate\n\n" +
-                "A câmera é fixa nesta demo\n(nenhuma tecla a controla).";
+                "Câmera:\n" +
+                "WASD / setas\n  -> mover a câmera\n" +
+                "Scroll do mouse ou Q / E\n  -> zoom\n" +
+                "Botão do meio + arrastar\n  -> arrastar a câmera (pan)\n" +
+                "Botão direito + arrastar\n  -> girar a câmera (orbit)";
         }
 
         private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax)
