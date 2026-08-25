@@ -1,0 +1,20 @@
+{
+    "name": "GameRpg.PlayModeTests",
+    "rootNamespace": "GameRpg.Tests.PlayMode",
+    "references": [
+        "GameRpg.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

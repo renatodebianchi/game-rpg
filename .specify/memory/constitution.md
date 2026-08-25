@@ -1,17 +1,12 @@
 <!--
 Sync Impact Report
-Version change: (none) → 1.0.0
-Modified principles: N/A (initial ratification)
-Added sections:
-  - Core Principles: I. Gameplay-First Design, II. Modular & Data-Driven Architecture,
-    III. Test Coverage for Core Systems (NON-NEGOTIABLE), IV. Performance & Responsiveness Budgets,
-    V. Simplicity & Iterative Scope
-  - Technical Constraints
-  - Development Workflow
-  - Governance
+Version change: 1.0.0 → 1.0.1
+Modified principles: N/A (no principle redefined)
+Added sections: N/A
 Removed sections: N/A
-Deferred TODOs:
-  - TODO(TECH_STACK): Engine/language/framework not yet chosen; record here once decided.
+Resolved TODOs:
+  - TODO(TECH_STACK): resolved. Technical Constraints now records Unity/C#/PC desktop, decided
+    during /speckit-plan for feature 001-isometric-sandbox-rpg (see specs/001-isometric-sandbox-rpg/research.md).
 Templates requiring follow-up: none (no dependent templates modified by this command)
 -->
 
@@ -69,10 +64,23 @@ never shipping.
 
 ## Technical Constraints
 
-TODO(TECH_STACK): Engine, language, and target platform(s) have not yet been chosen for
-this project. Once decided, this section MUST be updated to record: the engine/framework,
-primary language(s), minimum supported platforms, and any third-party dependencies that
-are pre-approved vs. requiring review.
+- **Engine/Framework**: Unity (LTS release current at the start of each feature's
+  implementation — e.g., Unity 6 LTS at time of writing).
+- **Primary Language**: C#.
+- **Rendering**: Universal Render Pipeline (URP), with Cinemachine for camera control.
+- **Minimum Supported Platform**: PC desktop, Windows as the primary validated target;
+  additional platforms require a new spec/plan iteration, not a silent scope expansion.
+- **Pre-approved dependencies**: Unity Input System, Unity Test Framework, ScriptableObjects
+  for content data. Any additional third-party package (paid asset, external library) requires
+  review against Principle V (Simplicity) before adoption — it must be justified by a concrete,
+  current need.
+- **Data & Persistence**: Content is authored as `ScriptableObject` assets (Principle II).
+  Save data is local JSON via `Application.persistentDataPath`; no database engine or cloud
+  sync is pre-approved without a new plan iteration justifying the need.
+
+This stack was ratified based on the decisions recorded in
+`specs/001-isometric-sandbox-rpg/research.md`. Changing engine, primary language, or minimum
+platform requires a constitution amendment (this section), not just a feature-level plan.
 
 All technical choices MUST otherwise remain consistent with Principles I-V above: prefer
 data-driven content, keep systems modular, and keep the toolchain as simple as the project
@@ -106,4 +114,4 @@ checked for compliance with these principles; unresolved conflicts MUST be flagg
 resolved before implementation proceeds. Complexity that violates Principle V (Simplicity)
 MUST be explicitly justified in the relevant plan document.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-25 | **Last Amended**: 2026-08-25
+**Version**: 1.0.1 | **Ratified**: 2026-08-25 | **Last Amended**: 2026-08-25

@@ -1,1 +1,40 @@
+# Claude Code settings (local only)
 .claude/settings.local.json
+
+# Unity generated folders
+Library/
+Temp/
+Obj/
+obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+.vs/
+*.user
+*.suo
+*.csproj
+*.sln
+*.unityproj
+*.tmp
+crashlytics-build.properties
+
+# Unity license/activation artifacts (never commit — tied to a personal Unity account)
+*.alf
+*.ulf
+*.skm
+
+# Docker (local unityci volumes, if any are ever created alongside the project)
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# Rider / VS Code / JetBrains
+.idea/
+.vscode/settings.json
+*.iml
