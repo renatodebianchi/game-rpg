@@ -39,6 +39,8 @@ namespace GameRpg.Demo
         private readonly Dictionary<GridCoordinate, GameObject> _tileVisuals = new Dictionary<GridCoordinate, GameObject>();
         private GameObject _playerVisual;
         private GameObject _enemyVisual;
+        private HealthBarWidget _playerHealthBar;
+        private HealthBarWidget _enemyHealthBar;
         private Text _statusText;
         private Button _attackButton;
         private Button _endTurnButton;
@@ -49,10 +51,30 @@ namespace GameRpg.Demo
         {
             EnsureCamera();
             BuildGrid();
+            FrameCameraOnGrid();
             SpawnCombatants();
             BuildEncounter();
             BuildUi();
             Refresh("Combate iniciado. Clique em um tile para mover, ou use os botões.");
+        }
+
+        /// <summary>
+        /// Repositions Camera.main so the whole grid is actually in frame,
+        /// regardless of whether it's a freshly created camera or one already
+        /// placed in the scene (e.g., by ProjectBootstrap) at unrelated coordinates.
+        /// </summary>
+        private void FrameCameraOnGrid()
+        {
+            var camera = Camera.main;
+            if (camera == null)
+            {
+                return;
+            }
+
+            var center = new Vector3((gridWidth - 1) / 2f, 0f, (gridHeight - 1) / 2f);
+            var distance = Mathf.Max(gridWidth, gridHeight) * 2f;
+            camera.transform.position = center - camera.transform.rotation * Vector3.forward * distance;
+            camera.orthographicSize = Mathf.Max(gridWidth, gridHeight) * 0.75f;
         }
 
         private static void EnsureCamera()
@@ -117,6 +139,11 @@ namespace GameRpg.Demo
 
             _playerVisual = CreateCombatantVisual("Player", Color.blue, PrimitiveType.Capsule);
             _enemyVisual = CreateCombatantVisual("Enemy", Color.red, PrimitiveType.Capsule);
+
+            _playerHealthBar = HealthBarWidget.Create(_playerVisual.transform, new Vector3(0f, 1.1f, 0f));
+            _enemyHealthBar = HealthBarWidget.Create(_enemyVisual.transform, new Vector3(0f, 1.1f, 0f));
+            _playerHealthBar.SetFraction(1f);
+            _enemyHealthBar.SetFraction(1f);
         }
 
         private GameObject CreateCombatantVisual(string name, Color color, PrimitiveType primitiveType)
@@ -150,6 +177,11 @@ namespace GameRpg.Demo
             {
                 _combatOver = true;
                 Refresh("Derrota. Retornando ao último checkpoint.");
+            };
+            _outcomeHandler.CombatantHarmed += harmedEvent =>
+            {
+                var bar = harmedEvent.Combatant == _player ? _playerHealthBar : _enemyHealthBar;
+                bar.FlashDamage();
             };
         }
 
@@ -262,6 +294,12 @@ namespace GameRpg.Demo
                 return;
             }
 
+            if (!_player.TurnResources.ActionAvailable)
+            {
+                Refresh("Você já usou sua ação neste turno. Clique em 'Terminar Turno'.");
+                return;
+            }
+
             if (GridCoordinate.ManhattanDistance(_player.Position, _enemy.Position) > 1)
             {
                 Refresh("Inimigo fora de alcance. Aproxime-se primeiro.");
@@ -277,6 +315,12 @@ namespace GameRpg.Demo
         {
             if (_combatOver || _encounter.CurrentActor != _player)
             {
+                return;
+            }
+
+            if (!_player.TurnResources.ActionAvailable)
+            {
+                Refresh("Você já usou sua ação neste turno. Clique em 'Terminar Turno'.");
                 return;
             }
 
@@ -347,6 +391,15 @@ namespace GameRpg.Demo
             _enemyVisual.transform.position = new Vector3(_enemy.Position.X, 0.5f, _enemy.Position.Y);
             _enemyVisual.SetActive(!_enemy.IsDefeated);
             _playerVisual.SetActive(!_player.IsDefeated);
+
+            _playerHealthBar.SetFraction((float)_player.CurrentHitPoints / _player.MaxHitPoints);
+            _enemyHealthBar.SetFraction((float)_enemy.CurrentHitPoints / _enemy.MaxHitPoints);
+
+            var isPlayerTurnWithActionLeft = !_combatOver && _encounter.CurrentActor == _player && _player.TurnResources.ActionAvailable;
+            var isPlayerTurn = !_combatOver && _encounter.CurrentActor == _player;
+            _attackButton.interactable = isPlayerTurnWithActionLeft;
+            _fleeButton.interactable = isPlayerTurnWithActionLeft;
+            _endTurnButton.interactable = isPlayerTurn;
 
             if (_statusText != null)
             {
