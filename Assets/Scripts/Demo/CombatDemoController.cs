@@ -157,7 +157,7 @@ namespace GameRpg.Demo
             canvasGameObject.AddComponent<CanvasScaler>();
             canvasGameObject.AddComponent<GraphicRaycaster>();
 
-            if (FindFirstObjectByType<EventSystem>() == null)
+            if (FindAnyObjectByType<EventSystem>() == null)
             {
                 var eventSystemGameObject = new GameObject("EventSystem");
                 eventSystemGameObject.AddComponent<EventSystem>();
@@ -168,6 +168,43 @@ namespace GameRpg.Demo
             _attackButton = CreateButton(canvasGameObject.transform, "Atacar", new Vector2(0.02f, 0.02f), OnAttackClicked);
             _endTurnButton = CreateButton(canvasGameObject.transform, "Terminar Turno", new Vector2(0.18f, 0.02f), OnEndTurnClicked);
             _fleeButton = CreateButton(canvasGameObject.transform, "Fugir", new Vector2(0.38f, 0.02f), OnFleeClicked);
+
+            CreateControlsHelpCard(canvasGameObject.transform);
+        }
+
+        /// <summary>
+        /// Fixed help card on the right edge of the screen listing every input
+        /// this demo responds to — there is no camera control bound to any key
+        /// (the camera is static by design here), so this makes that explicit
+        /// instead of leaving the player guessing.
+        /// </summary>
+        private void CreateControlsHelpCard(Transform parent)
+        {
+            var panelGameObject = new GameObject("ControlsHelpCard");
+            panelGameObject.transform.SetParent(parent, worldPositionStays: false);
+            var panelImage = panelGameObject.AddComponent<Image>();
+            panelImage.color = new Color(0f, 0f, 0f, 0.6f);
+
+            var rect = panelImage.rectTransform;
+            rect.anchorMin = new Vector2(0.78f, 0.55f);
+            rect.anchorMax = new Vector2(0.99f, 0.99f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            var titleText = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.85f), new Vector2(0.95f, 0.98f));
+            titleText.text = "Comandos";
+            titleText.fontSize = 18;
+            titleText.fontStyle = FontStyle.Bold;
+
+            var bodyText = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.83f));
+            bodyText.fontSize = 15;
+            bodyText.alignment = TextAnchor.UpperLeft;
+            bodyText.text =
+                "Clique em um tile\n  -> mover o personagem\n\n" +
+                "Botão Atacar\n  -> atacar o inimigo adjacente\n\n" +
+                "Botão Terminar Turno\n  -> passa o turno (a IA do\n     inimigo joga em seguida)\n\n" +
+                "Botão Fugir\n  -> tenta fugir do combate\n\n" +
+                "A câmera é fixa nesta demo\n(nenhuma tecla a controla).";
         }
 
         private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax)
