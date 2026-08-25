@@ -1,4 +1,5 @@
 using System.IO;
+using GameRpg.Demo;
 using GameRpg.NPCs;
 using GameRpg.Skills;
 using GameRpg.World;
@@ -35,8 +36,27 @@ namespace GameRpg.Editor
             CreateCombatEncounterTestScene();
             CreateInitialSkillContent();
             CreateInitialWorldContent();
+            WireCombatDemoIntoTestScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        /// <summary>
+        /// Adds a CombatDemoController to CombatEncounterTest.unity so the scene
+        /// is playable/visual for manual testing (see quickstart.md's combat
+        /// validation section) without any hand-authored scene content.
+        /// </summary>
+        private static void WireCombatDemoIntoTestScene()
+        {
+            var scene = EditorSceneManager.OpenScene(CombatEncounterTestScenePath, OpenSceneMode.Single);
+
+            if (GameObject.Find("CombatDemoController") == null)
+            {
+                var demoGameObject = new GameObject("CombatDemoController");
+                demoGameObject.AddComponent<CombatDemoController>();
+            }
+
+            EditorSceneManager.SaveScene(scene);
         }
 
         private static void CreateInitialWorldContent()
