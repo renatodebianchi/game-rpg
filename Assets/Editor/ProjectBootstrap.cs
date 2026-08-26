@@ -27,6 +27,7 @@ namespace GameRpg.Editor
         private const string CombatEncounterTestScenePath = "Assets/Scenes/CombatEncounterTest.unity";
         private const string SkillTreeDemoScenePath = "Assets/Scenes/SkillTreeDemo.unity";
         private const string SurvivalDemoScenePath = "Assets/Scenes/SurvivalDemo.unity";
+        private const string ReputationEconomyDemoScenePath = "Assets/Scenes/ReputationEconomyDemo.unity";
 
         private const string SkillContentDirectory = "Assets/Data/Skills";
         private const string WorldContentDirectory = "Assets/Data/World";
@@ -42,6 +43,7 @@ namespace GameRpg.Editor
             WireCombatDemoIntoTestScene();
             WireSkillTreeDemoScene();
             WireSurvivalDemoScene();
+            WireReputationEconomyDemoScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -127,6 +129,59 @@ namespace GameRpg.Editor
             }
 
             EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>
+        /// Creates ReputationEconomyDemo.unity (if missing) with a plain camera
+        /// and a ReputationEconomyDemoController wired with the seeded village/
+        /// NPC assets, so User Story 4 (reputation, village economy/population,
+        /// permanent collapse) is manually testable.
+        /// </summary>
+        private static void WireReputationEconomyDemoScene()
+        {
+            var scene = CreateUiDemoScene(ReputationEconomyDemoScenePath, "ReputationEconomyDemoController");
+
+            var communityIds = new[] { "village_oakhollow", "village_riverbend" };
+            var npcIds = new[]
+            {
+                "npc_oakhollow_elder", "npc_oakhollow_merchant", "npc_oakhollow_guard",
+                "npc_riverbend_healer", "npc_riverbend_farmer",
+            };
+
+            var communities = communityIds
+                .Select(id => AssetDatabase.LoadAssetAtPath<CommunityDefinition>($"{WorldContentDirectory}/{id}.asset"))
+                .Where(c => c != null)
+                .ToArray();
+            var npcs = npcIds
+                .Select(id => AssetDatabase.LoadAssetAtPath<NpcDefinition>($"{WorldContentDirectory}/{id}.asset"))
+                .Where(n => n != null)
+                .ToArray();
+
+            var controllerGameObject = GameObject.Find("ReputationEconomyDemoController");
+            var controller = controllerGameObject.GetComponent<ReputationEconomyDemoController>();
+            if (controller == null)
+            {
+                controller = controllerGameObject.AddComponent<ReputationEconomyDemoController>();
+            }
+
+            var serializedController = new SerializedObject(controller);
+            AssignObjectArray(serializedController, "communityDefinitions", communities);
+            AssignObjectArray(serializedController, "npcDefinitions", npcs);
+            serializedController.ApplyModifiedPropertiesWithoutUndo();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        private static void AssignObjectArray(SerializedObject serializedObject, string propertyName, UnityEngine.Object[] values)
+        {
+            var property = serializedObject.FindProperty(propertyName);
+            property.ClearArray();
+            for (var i = 0; i < values.Length; i++)
+            {
+                property.InsertArrayElementAtIndex(i);
+                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            }
         }
 
         /// <summary>
