@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GameRpg.Characters;
 using GameRpg.Skills;
+using GameRpg.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -132,64 +133,26 @@ namespace GameRpg.Demo
             return depths;
         }
 
+        // Rendering delegates to the shared DemoUiKit (FR-007) instead of keeping a
+        // local copy of these methods — see research.md, "Extrair os componentes de
+        // UI duplicados".
         private void CreateNodeButton(Transform parent, SkillNodeDefinition node, float x, float y)
         {
-            var buttonGameObject = new GameObject($"Node_{node.NodeId}");
-            buttonGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var image = buttonGameObject.AddComponent<Image>();
-            var button = buttonGameObject.AddComponent<Button>();
-            button.onClick.AddListener(() => OnNodeClicked(node));
+            var button = DemoUiKit.CreateButton(
+                parent, string.Empty, new Vector2(x, y), new Vector2(0.25f, 0.11f),
+                () => OnNodeClicked(node), fontSize: 13);
+            button.gameObject.name = $"Node_{node.NodeId}";
 
-            var rect = image.rectTransform;
-            rect.anchorMin = new Vector2(x, y);
-            rect.anchorMax = new Vector2(x + 0.25f, y + 0.11f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var label = CreateText(buttonGameObject.transform, Vector2.zero, Vector2.one);
-            label.alignment = TextAnchor.MiddleCenter;
-            label.fontSize = 13;
-
+            var label = button.GetComponentInChildren<Text>();
             _buttonsByNode[node] = button;
             _labelsByNode[node] = label;
         }
 
-        private Button CreateSimpleButton(Transform parent, string label, Vector2 anchorMin)
-        {
-            var buttonGameObject = new GameObject($"Button_{label}");
-            buttonGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var image = buttonGameObject.AddComponent<Image>();
-            image.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
-            var button = buttonGameObject.AddComponent<Button>();
+        private Button CreateSimpleButton(Transform parent, string label, Vector2 anchorMin) =>
+            DemoUiKit.CreateButton(parent, label, anchorMin, new Vector2(0.2f, 0.06f), null, fontSize: 14);
 
-            var rect = image.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMin + new Vector2(0.2f, 0.06f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var text = CreateText(buttonGameObject.transform, Vector2.zero, Vector2.one);
-            text.text = label;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.fontSize = 14;
-
-            return button;
-        }
-
-        private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            var textGameObject = new GameObject("Text");
-            textGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var text = textGameObject.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.color = Color.white;
-            var rect = text.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            return text;
-        }
+        private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax) =>
+            DemoUiKit.CreateText(parent, anchorMin, anchorMax);
 
         private void OnNodeClicked(SkillNodeDefinition node)
         {

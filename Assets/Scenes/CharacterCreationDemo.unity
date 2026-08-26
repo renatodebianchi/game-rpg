@@ -234,6 +234,7 @@ MonoBehaviour:
   equipmentKits:
   - {fileID: 11400000, guid: 3995adc85c5ab054584e30126e82583f, type: 2}
   - {fileID: 11400000, guid: 487d0e3eb46c3e44fb8117839ae18846, type: 2}
+  explorationSceneName: Exploration
 --- !u!4 &1347057457
 Transform:
   m_ObjectHideFlags: 0

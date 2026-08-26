@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using GameRpg.Characters;
 using GameRpg.Combat;
 using GameRpg.Combat.Grid;
+using GameRpg.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -216,25 +217,20 @@ namespace GameRpg.Demo
         /// </summary>
         private void CreateControlsHelpCard(Transform parent)
         {
-            var panelGameObject = new GameObject("ControlsHelpCard");
-            panelGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var panelImage = panelGameObject.AddComponent<Image>();
-            panelImage.color = new Color(0f, 0f, 0f, 0.6f);
-
-            var rect = panelImage.rectTransform;
-            rect.anchorMin = new Vector2(0.78f, 0.55f);
-            rect.anchorMax = new Vector2(0.99f, 0.99f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            var panelImage = DemoUiKit.CreatePanel(parent, new Vector2(0.78f, 0.55f), new Vector2(0.99f, 0.99f));
+            var panelGameObject = panelImage.gameObject;
+            panelGameObject.name = "ControlsHelpCard";
 
             var titleText = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.85f), new Vector2(0.95f, 0.98f));
             titleText.text = "Comandos";
             titleText.fontSize = 18;
             titleText.fontStyle = FontStyle.Bold;
+            titleText.color = Color.black;
 
             var bodyText = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.02f), new Vector2(0.95f, 0.83f));
             bodyText.fontSize = 14;
             bodyText.alignment = TextAnchor.UpperLeft;
+            bodyText.color = Color.black;
             bodyText.text =
                 "Clique em um tile\n  -> mover o personagem\n\n" +
                 "Botão Atacar\n  -> atacar o inimigo adjacente\n\n" +
@@ -247,45 +243,19 @@ namespace GameRpg.Demo
                 "Botão direito + arrastar\n  -> girar a câmera (orbit)";
         }
 
+        // Rendering delegates to the shared DemoUiKit (FR-007) instead of keeping a
+        // local copy of these methods — see research.md, "Extrair os componentes de
+        // UI duplicados".
         private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax)
         {
-            var textGameObject = new GameObject("StatusText");
-            textGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var text = textGameObject.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var text = DemoUiKit.CreateText(parent, anchorMin, anchorMax);
             text.fontSize = 20;
-            text.color = Color.white;
             text.alignment = TextAnchor.UpperLeft;
-            var rect = text.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
             return text;
         }
 
-        private Button CreateButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick)
-        {
-            var buttonGameObject = new GameObject($"Button_{label}");
-            buttonGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var image = buttonGameObject.AddComponent<Image>();
-            image.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
-            var button = buttonGameObject.AddComponent<Button>();
-            button.onClick.AddListener(onClick);
-
-            var rect = image.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMin + new Vector2(0.15f, 0.06f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var labelText = CreateText(buttonGameObject.transform, Vector2.zero, Vector2.one);
-            labelText.text = label;
-            labelText.alignment = TextAnchor.MiddleCenter;
-            labelText.fontSize = 16;
-
-            return button;
-        }
+        private Button CreateButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick) =>
+            DemoUiKit.CreateButton(parent, label, anchorMin, new Vector2(0.15f, 0.06f), onClick, fontSize: 16);
 
         private void OnAttackClicked()
         {

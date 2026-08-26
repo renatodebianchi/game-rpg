@@ -50,8 +50,53 @@ namespace GameRpg.Editor
             WireSurvivalDemoScene();
             WireReputationEconomyDemoScene();
             WireCharacterCreationDemoScene();
+            WireExplorationScene();
+            RegisterScenesInBuildSettings();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        /// <summary>
+        /// Adds an ExplorationCharacterController to Exploration.unity (feature 003,
+        /// FR-001/FR-002) so the scene shows and moves the player's created
+        /// character — or a default one, per FR-004/scene-transition-contract.md —
+        /// without any hand-authored scene content.
+        /// </summary>
+        private static void WireExplorationScene()
+        {
+            var scene = EditorSceneManager.OpenScene(ExplorationScenePath, OpenSceneMode.Single);
+
+            if (GameObject.Find("ExplorationCharacterController") == null)
+            {
+                var controllerGameObject = new GameObject("ExplorationCharacterController");
+                controllerGameObject.AddComponent<ExplorationCharacterController>();
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>
+        /// SceneManager.LoadScene (used by CharacterCreationUI's "Finalizar" button
+        /// to enter Exploration, contracts/scene-transition-contract.md) only finds
+        /// scenes registered in Build Settings, even inside the Editor's Play mode.
+        /// </summary>
+        private static void RegisterScenesInBuildSettings()
+        {
+            var scenePaths = new[]
+            {
+                ExplorationScenePath,
+                CombatEncounterTestScenePath,
+                SkillTreeDemoScenePath,
+                SurvivalDemoScenePath,
+                ReputationEconomyDemoScenePath,
+                CharacterCreationDemoScenePath,
+            };
+
+            EditorBuildSettings.scenes = scenePaths
+                .Where(File.Exists)
+                .Select(path => new EditorBuildSettingsScene(path, enabled: true))
+                .ToArray();
         }
 
         /// <summary>

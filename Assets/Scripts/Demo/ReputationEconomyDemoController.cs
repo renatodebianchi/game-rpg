@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GameRpg.Core;
 using GameRpg.NPCs;
+using GameRpg.UI;
 using GameRpg.World;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -182,24 +183,20 @@ namespace GameRpg.Demo
 
         private void BuildVillagePanel(Transform parent, string communityId, float x, float width)
         {
-            var panelGameObject = new GameObject($"Panel_{communityId}");
-            panelGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var panelImage = panelGameObject.AddComponent<Image>();
-            panelImage.color = new Color(0f, 0f, 0f, 0.5f);
-            var panelRect = panelImage.rectTransform;
-            panelRect.anchorMin = new Vector2(x, 0.35f);
-            panelRect.anchorMax = new Vector2(x + width, 0.97f);
-            panelRect.offsetMin = Vector2.zero;
-            panelRect.offsetMax = Vector2.zero;
+            var panelImage = DemoUiKit.CreatePanel(parent, new Vector2(x, 0.35f), new Vector2(x + width, 0.97f));
+            var panelGameObject = panelImage.gameObject;
+            panelGameObject.name = $"Panel_{communityId}";
 
             var title = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.88f), new Vector2(0.95f, 0.97f));
             title.text = _displayNamesById[communityId];
             title.fontStyle = FontStyle.Bold;
             title.fontSize = 18;
+            title.color = Color.black;
 
             var infoText = CreateText(panelGameObject.transform, new Vector2(0.05f, 0.35f), new Vector2(0.95f, 0.87f));
             infoText.alignment = TextAnchor.UpperLeft;
             infoText.fontSize = 14;
+            infoText.color = Color.black;
             _panelTextByCommunity[communityId] = infoText;
 
             CreateActionButton(panelGameObject.transform, "Salvar NPC", new Vector2(0.05f, 0.18f), () => SaveFirstNpc(communityId));
@@ -236,41 +233,14 @@ namespace GameRpg.Demo
             Refresh();
         }
 
-        private void CreateActionButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick)
-        {
-            var buttonGameObject = new GameObject($"Button_{label}");
-            buttonGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var image = buttonGameObject.AddComponent<Image>();
-            image.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
-            var button = buttonGameObject.AddComponent<Button>();
-            button.onClick.AddListener(onClick);
+        // Rendering delegates to the shared DemoUiKit (FR-007) instead of keeping a
+        // local copy of these methods — see research.md, "Extrair os componentes de
+        // UI duplicados".
+        private void CreateActionButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick) =>
+            DemoUiKit.CreateButton(parent, label, anchorMin, new Vector2(0.22f, 0.08f), onClick, fontSize: 12);
 
-            var rect = image.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMin + new Vector2(0.22f, 0.08f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var text = CreateText(buttonGameObject.transform, Vector2.zero, Vector2.one);
-            text.text = label;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.fontSize = 12;
-        }
-
-        private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            var textGameObject = new GameObject("Text");
-            textGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var text = textGameObject.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.color = Color.white;
-            var rect = text.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            return text;
-        }
+        private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax) =>
+            DemoUiKit.CreateText(parent, anchorMin, anchorMax);
 
         private void Log(string message)
         {
@@ -295,7 +265,7 @@ namespace GameRpg.Demo
                     $"Estoque de comida: {community.GetResourceStock(FoodResourceId):0}\n" +
                     $"Economia: {(community.IsPermanentlyInactive ? "COLAPSADA (permanente)" : economyState)}";
 
-                text.color = community.IsPermanentlyInactive ? new Color(0.9f, 0.3f, 0.3f) : Color.white;
+                text.color = community.IsPermanentlyInactive ? new Color(0.7f, 0.1f, 0.1f) : Color.black;
             }
         }
     }

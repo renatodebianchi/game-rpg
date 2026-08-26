@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using GameRpg.Characters;
+using GameRpg.Core;
 using GameRpg.World;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace GameRpg.UI
@@ -24,6 +26,7 @@ namespace GameRpg.UI
         }
 
         [SerializeField] private List<EquipmentKitDefinition> equipmentKits = new List<EquipmentKitDefinition>();
+        [SerializeField] private string explorationSceneName = "Exploration";
 
         private Character _character;
         private CharacterCreationProfile _profile;
@@ -137,7 +140,9 @@ namespace GameRpg.UI
 
                 case Step.Summary:
                     _profile.Finalize(_character, equipmentKits);
-                    break;
+                    PendingPlayerCharacter.Set(_character);
+                    SceneManager.LoadScene(explorationSceneName);
+                    return; // Scene transition (contracts/scene-transition-contract.md) — nothing left to refresh here.
             }
 
             RefreshStep();
@@ -279,85 +284,19 @@ namespace GameRpg.UI
             };
         }
 
-        private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            var textGameObject = new GameObject("Text");
-            textGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var text = textGameObject.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.color = Color.white;
-            var rect = text.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            return text;
-        }
+        // Rendering delegates to the shared DemoUiKit (FR-007) instead of keeping a
+        // local copy of these methods — see research.md, "Extrair os componentes de
+        // UI duplicados".
+        private Text CreateText(Transform parent, Vector2 anchorMin, Vector2 anchorMax) =>
+            DemoUiKit.CreateText(parent, anchorMin, anchorMax);
 
-        private Button CreateButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick)
-        {
-            var buttonGameObject = new GameObject($"Button_{label}");
-            buttonGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var image = buttonGameObject.AddComponent<Image>();
-            image.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
-            var button = buttonGameObject.AddComponent<Button>();
-            button.onClick.AddListener(onClick);
+        private Button CreateButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick) =>
+            DemoUiKit.CreateButton(parent, label, anchorMin, new Vector2(0.18f, 0.06f), onClick, fontSize: 14);
 
-            var rect = image.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMin + new Vector2(0.18f, 0.06f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+        private void CreateActionButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick) =>
+            DemoUiKit.CreateButton(parent, label, anchorMin, new Vector2(0.3f, 0.15f), onClick, fontSize: 16);
 
-            var text = CreateText(buttonGameObject.transform, Vector2.zero, Vector2.one);
-            text.text = label;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.fontSize = 14;
-
-            return button;
-        }
-
-        private void CreateActionButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick)
-        {
-            var buttonGameObject = new GameObject($"Button_{label}");
-            buttonGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var image = buttonGameObject.AddComponent<Image>();
-            var isSelected = false;
-            image.color = isSelected ? new Color(0.2f, 0.6f, 0.2f) : new Color(0.15f, 0.15f, 0.15f, 0.9f);
-            var button = buttonGameObject.AddComponent<Button>();
-            button.onClick.AddListener(onClick);
-
-            var rect = image.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMin + new Vector2(0.3f, 0.15f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var text = CreateText(buttonGameObject.transform, Vector2.zero, Vector2.one);
-            text.text = label;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.fontSize = 16;
-        }
-
-        private void CreateSmallButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick)
-        {
-            var buttonGameObject = new GameObject($"SmallButton_{label}_{anchorMin}");
-            buttonGameObject.transform.SetParent(parent, worldPositionStays: false);
-            var image = buttonGameObject.AddComponent<Image>();
-            image.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
-            var button = buttonGameObject.AddComponent<Button>();
-            button.onClick.AddListener(onClick);
-
-            var rect = image.rectTransform;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMin + new Vector2(0.06f, 0.06f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var text = CreateText(buttonGameObject.transform, Vector2.zero, Vector2.one);
-            text.text = label;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.fontSize = 12;
-        }
+        private void CreateSmallButton(Transform parent, string label, Vector2 anchorMin, UnityEngine.Events.UnityAction onClick) =>
+            DemoUiKit.CreateButton(parent, label, anchorMin, new Vector2(0.06f, 0.06f), onClick, fontSize: 12);
     }
 }
