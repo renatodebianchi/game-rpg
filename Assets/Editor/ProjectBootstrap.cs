@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using GameRpg.Demo;
 using GameRpg.NPCs;
 using GameRpg.Skills;
@@ -24,6 +25,8 @@ namespace GameRpg.Editor
         private const string RendererDataPath = "Assets/Settings/GameRpgUrpRenderer.asset";
         private const string ExplorationScenePath = "Assets/Scenes/Exploration.unity";
         private const string CombatEncounterTestScenePath = "Assets/Scenes/CombatEncounterTest.unity";
+        private const string SkillTreeDemoScenePath = "Assets/Scenes/SkillTreeDemo.unity";
+        private const string SurvivalDemoScenePath = "Assets/Scenes/SurvivalDemo.unity";
 
         private const string SkillContentDirectory = "Assets/Data/Skills";
         private const string WorldContentDirectory = "Assets/Data/World";
@@ -37,6 +40,8 @@ namespace GameRpg.Editor
             CreateInitialSkillContent();
             CreateInitialWorldContent();
             WireCombatDemoIntoTestScene();
+            WireSkillTreeDemoScene();
+            WireSurvivalDemoScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -57,6 +62,111 @@ namespace GameRpg.Editor
             }
 
             EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>
+        /// Creates SkillTreeDemo.unity (if missing) with a plain camera and a
+        /// SkillTreeDemoController wired with the seeded skill node assets, so
+        /// User Story 2 (including respec) is manually testable.
+        ///
+        /// Loads the node assets fresh, right here, instead of accepting them
+        /// as a parameter: carrying ScriptableObject references across the
+        /// EditorSceneManager.OpenScene/NewScene calls made by earlier steps in
+        /// SetupProject() left them pointing at unloaded objects (every
+        /// reference serialized as `{fileID: 0}`, i.e. null, even though the
+        /// array itself had the right length) — reloading by path immediately
+        /// before use avoids that.
+        /// </summary>
+        private static void WireSkillTreeDemoScene()
+        {
+            var scene = CreateUiDemoScene(SkillTreeDemoScenePath, "SkillTreeDemoController");
+
+            var skillNodes = new[]
+            {
+                "combat_power_strike", "combat_cleave", "arcane_bolt", "arcane_shield", "hybrid_spellblade",
+            }
+                .Select(nodeId => AssetDatabase.LoadAssetAtPath<SkillNodeDefinition>($"{SkillContentDirectory}/{nodeId}.asset"))
+                .Where(node => node != null)
+                .ToArray();
+
+            var controllerGameObject = GameObject.Find("SkillTreeDemoController");
+            var controller = controllerGameObject.GetComponent<SkillTreeDemoController>();
+            if (controller == null)
+            {
+                controller = controllerGameObject.AddComponent<SkillTreeDemoController>();
+            }
+
+            var serializedController = new SerializedObject(controller);
+            var nodesProperty = serializedController.FindProperty("allNodes");
+            nodesProperty.ClearArray();
+            for (var i = 0; i < skillNodes.Length; i++)
+            {
+                nodesProperty.InsertArrayElementAtIndex(i);
+                nodesProperty.GetArrayElementAtIndex(i).objectReferenceValue = skillNodes[i];
+            }
+
+            serializedController.ApplyModifiedPropertiesWithoutUndo();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>
+        /// Creates SurvivalDemo.unity (if missing) with a plain camera and a
+        /// SurvivalDemoController, so User Story 3 (hunger/sanity, including
+        /// cumulative combat penalties) is manually testable.
+        /// </summary>
+        private static void WireSurvivalDemoScene()
+        {
+            var scene = CreateUiDemoScene(SurvivalDemoScenePath, "SurvivalDemoController");
+
+            var controllerGameObject = GameObject.Find("SurvivalDemoController");
+            if (controllerGameObject.GetComponent<SurvivalDemoController>() == null)
+            {
+                controllerGameObject.AddComponent<SurvivalDemoController>();
+            }
+
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>
+        /// Shared helper: opens (creating if needed) a bare scene with a plain
+        /// camera and a named, empty controller GameObject — the pattern used
+        /// by every UI-only demo scene (skill tree, survival).
+        /// </summary>
+        private static UnityEngine.SceneManagement.Scene CreateUiDemoScene(string scenePath, string controllerGameObjectName)
+        {
+            UnityEngine.SceneManagement.Scene scene;
+
+            if (File.Exists(scenePath))
+            {
+                scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            }
+            else
+            {
+                scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+                var cameraGameObject = new GameObject("DemoCamera");
+                var camera = cameraGameObject.AddComponent<Camera>();
+                camera.orthographic = true;
+                camera.orthographicSize = 6f;
+                cameraGameObject.tag = "MainCamera";
+
+                var directory = Path.GetDirectoryName(scenePath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                EditorSceneManager.SaveScene(scene, scenePath);
+            }
+
+            if (GameObject.Find(controllerGameObjectName) == null)
+            {
+                new GameObject(controllerGameObjectName);
+            }
+
+            return scene;
         }
 
         private static void CreateInitialWorldContent()
@@ -98,7 +208,7 @@ namespace GameRpg.Editor
             }
         }
 
-        private static void CreateInitialSkillContent()
+        private static SkillNodeDefinition[] CreateInitialSkillContent()
         {
             // T037: a small starter set spanning Combatant, Arcanist, and one
             // Hybrid node, demonstrating the prerequisite/track rules from
@@ -110,9 +220,17 @@ namespace GameRpg.Editor
                 AssetDatabase.Refresh();
             }
 
-            if (AssetDatabase.FindAssets("t:SkillNodeDefinition", new[] { SkillContentDirectory }).Length > 0)
+            var knownNodeIds = new[]
             {
-                return; // Already seeded.
+                "combat_power_strike", "combat_cleave", "arcane_bolt", "arcane_shield", "hybrid_spellblade",
+            };
+
+            if (File.Exists($"{SkillContentDirectory}/{knownNodeIds[0]}.asset"))
+            {
+                return knownNodeIds
+                    .Select(nodeId => AssetDatabase.LoadAssetAtPath<SkillNodeDefinition>($"{SkillContentDirectory}/{nodeId}.asset"))
+                    .Where(node => node != null)
+                    .ToArray();
             }
 
             var powerStrike = CreateSkillNodeAsset(
@@ -129,13 +247,11 @@ namespace GameRpg.Editor
                 "arcane_shield", SkillTrack.Arcanist, cost: 2,
                 grantedCapabilityId: "capability.arcanist.arcane_shield", arcaneBolt);
 
-            CreateSkillNodeAsset(
+            var hybridSpellblade = CreateSkillNodeAsset(
                 "hybrid_spellblade", SkillTrack.Hybrid, cost: 3,
                 grantedCapabilityId: "capability.hybrid.spellblade", powerStrike, arcaneBolt);
 
-            // Reference cleave/arcaneShield too, so they are not reported as unused locals.
-            _ = cleave;
-            _ = arcaneShield;
+            return new[] { powerStrike, cleave, arcaneBolt, arcaneShield, hybridSpellblade };
         }
 
         private static SkillNodeDefinition CreateSkillNodeAsset(
