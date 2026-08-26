@@ -1,8 +1,10 @@
 using System.IO;
 using System.Linq;
+using GameRpg.Characters;
 using GameRpg.Demo;
 using GameRpg.NPCs;
 using GameRpg.Skills;
+using GameRpg.UI;
 using GameRpg.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -28,9 +30,11 @@ namespace GameRpg.Editor
         private const string SkillTreeDemoScenePath = "Assets/Scenes/SkillTreeDemo.unity";
         private const string SurvivalDemoScenePath = "Assets/Scenes/SurvivalDemo.unity";
         private const string ReputationEconomyDemoScenePath = "Assets/Scenes/ReputationEconomyDemo.unity";
+        private const string CharacterCreationDemoScenePath = "Assets/Scenes/CharacterCreationDemo.unity";
 
         private const string SkillContentDirectory = "Assets/Data/Skills";
         private const string WorldContentDirectory = "Assets/Data/World";
+        private const string EquipmentContentDirectory = "Assets/Data/Equipment";
 
         [MenuItem("GameRpg/Bootstrap/Setup Project (URP + Scenes + Content)")]
         public static void SetupProject()
@@ -40,10 +44,12 @@ namespace GameRpg.Editor
             CreateCombatEncounterTestScene();
             CreateInitialSkillContent();
             CreateInitialWorldContent();
+            CreateInitialEquipmentKitContent();
             WireCombatDemoIntoTestScene();
             WireSkillTreeDemoScene();
             WireSurvivalDemoScene();
             WireReputationEconomyDemoScene();
+            WireCharacterCreationDemoScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -222,6 +228,73 @@ namespace GameRpg.Editor
             }
 
             return scene;
+        }
+
+        /// <summary>
+        /// Creates CharacterCreationDemo.unity (if missing) with a plain camera
+        /// and a CharacterCreationUI wired with the seeded equipment kits, so
+        /// the character-creation feature (attributes, orientation, appearance)
+        /// is manually testable. Loads the kits fresh from their known paths,
+        /// same reasoning as WireSkillTreeDemoScene: carrying references across
+        /// the earlier OpenScene/NewScene calls in SetupProject() leaves them
+        /// stale.
+        /// </summary>
+        private static void WireCharacterCreationDemoScene()
+        {
+            var scene = CreateUiDemoScene(CharacterCreationDemoScenePath, "CharacterCreationUI");
+
+            var kits = new[] { "combatant_starter_kit", "arcanist_starter_kit" }
+                .Select(id => AssetDatabase.LoadAssetAtPath<EquipmentKitDefinition>($"{EquipmentContentDirectory}/{id}.asset"))
+                .Where(kit => kit != null)
+                .ToArray();
+
+            var controllerGameObject = GameObject.Find("CharacterCreationUI");
+            var controller = controllerGameObject.GetComponent<CharacterCreationUI>();
+            if (controller == null)
+            {
+                controller = controllerGameObject.AddComponent<CharacterCreationUI>();
+            }
+
+            var serializedController = new SerializedObject(controller);
+            AssignObjectArray(serializedController, "equipmentKits", kits);
+            serializedController.ApplyModifiedPropertiesWithoutUndo();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        private static void CreateInitialEquipmentKitContent()
+        {
+            // T016: fixed starting equipment kits per CharacterOrientation
+            // (contracts/character-creation-finalization-contract.md).
+            if (!AssetDatabase.IsValidFolder(EquipmentContentDirectory))
+            {
+                Directory.CreateDirectory(EquipmentContentDirectory);
+                AssetDatabase.Refresh();
+            }
+
+            if (File.Exists($"{EquipmentContentDirectory}/combatant_starter_kit.asset"))
+            {
+                return; // Already seeded.
+            }
+
+            var sword = ResourceDefinition.CreateForTesting("sword_basic", "Espada Básica", isEssential: false);
+            AssetDatabase.CreateAsset(sword, $"{EquipmentContentDirectory}/sword_basic.asset");
+            var leatherArmor = ResourceDefinition.CreateForTesting("leather_armor", "Armadura de Couro", isEssential: false);
+            AssetDatabase.CreateAsset(leatherArmor, $"{EquipmentContentDirectory}/leather_armor.asset");
+
+            var staff = ResourceDefinition.CreateForTesting("staff_basic", "Cajado Básico", isEssential: false);
+            AssetDatabase.CreateAsset(staff, $"{EquipmentContentDirectory}/staff_basic.asset");
+            var spellbook = ResourceDefinition.CreateForTesting("spellbook_basic", "Grimório Básico", isEssential: false);
+            AssetDatabase.CreateAsset(spellbook, $"{EquipmentContentDirectory}/spellbook_basic.asset");
+
+            var combatantKit = EquipmentKitDefinition.CreateForTesting(
+                CharacterOrientation.Combatant, new[] { (sword, 1), (leatherArmor, 1) });
+            AssetDatabase.CreateAsset(combatantKit, $"{EquipmentContentDirectory}/combatant_starter_kit.asset");
+
+            var arcanistKit = EquipmentKitDefinition.CreateForTesting(
+                CharacterOrientation.Arcanist, new[] { (staff, 1), (spellbook, 1) });
+            AssetDatabase.CreateAsset(arcanistKit, $"{EquipmentContentDirectory}/arcanist_starter_kit.asset");
         }
 
         private static void CreateInitialWorldContent()

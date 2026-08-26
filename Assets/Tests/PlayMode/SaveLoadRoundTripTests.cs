@@ -42,6 +42,13 @@ namespace GameRpg.Tests.PlayMode
             character.Hunger = 42f;
             character.Sanity = 63f;
             character.Inventory.Add("food", 3);
+            character.Visuals = new VisualCharacteristics
+            {
+                BodyType = BodyType.Sturdy,
+                SkinTone = SkinTone.Dark,
+                HairStyle = HairStyle.Bald,
+                HairColor = new UnityEngine.Color(0.9f, 0.1f, 0.1f),
+            };
 
             var worldClock = new WorldClock();
             worldClock.Advance(TimeSpan.FromHours(11));
@@ -72,6 +79,10 @@ namespace GameRpg.Tests.PlayMode
             Assert.AreEqual(character.Hunger, loadedCharacter.Hunger, 0.001f);
             Assert.AreEqual(character.Sanity, loadedCharacter.Sanity, 0.001f);
             Assert.AreEqual(character.Inventory.GetQuantity("food"), loadedCharacter.Inventory.GetQuantity("food"));
+            Assert.AreEqual(character.Visuals.BodyType, loadedCharacter.Visuals.BodyType);
+            Assert.AreEqual(character.Visuals.SkinTone, loadedCharacter.Visuals.SkinTone);
+            Assert.AreEqual(character.Visuals.HairStyle, loadedCharacter.Visuals.HairStyle);
+            Assert.AreEqual(character.Visuals.HairColor, loadedCharacter.Visuals.HairColor);
 
             // World clock matches.
             Assert.AreEqual(worldClock.ElapsedSimulatedTime, loadedWorldClock.ElapsedSimulatedTime);

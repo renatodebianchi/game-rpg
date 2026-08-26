@@ -105,6 +105,10 @@ namespace GameRpg.Core
                     inventory = character.Inventory.AsReadOnly()
                         .Select(kv => new InventoryEntry { resourceId = kv.Key, quantity = kv.Value })
                         .ToList(),
+                    bodyType = character.Visuals.BodyType,
+                    skinTone = character.Visuals.SkinTone,
+                    hairStyle = character.Visuals.HairStyle,
+                    hairColor = character.Visuals.HairColor,
                 },
             };
 
@@ -157,7 +161,14 @@ namespace GameRpg.Core
                 data.character.acquiredSkillNodeIds,
                 data.character.hunger,
                 data.character.sanity,
-                data.character.inventory.Select(e => new KeyValuePair<string, int>(e.resourceId, e.quantity)));
+                data.character.inventory.Select(e => new KeyValuePair<string, int>(e.resourceId, e.quantity)),
+                new VisualCharacteristics
+                {
+                    BodyType = data.character.bodyType,
+                    SkinTone = data.character.skinTone,
+                    HairStyle = data.character.hairStyle,
+                    HairColor = data.character.hairColor,
+                });
 
             foreach (var communitySave in data.communities)
             {

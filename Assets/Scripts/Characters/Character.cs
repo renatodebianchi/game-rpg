@@ -35,6 +35,13 @@ namespace GameRpg.Characters
         public IReadOnlyCollection<string> AcquiredSkillNodeIds => _acquiredSkillNodeIds;
         public Inventory Inventory { get; } = new Inventory();
 
+        /// <summary>
+        /// Cosmetic appearance chosen during character creation (FR-006). Set
+        /// once by CharacterCreationProfile.Finalize(); has no effect on
+        /// attributes, combat, or skills.
+        /// </summary>
+        public VisualCharacteristics Visuals { get; set; } = VisualCharacteristics.Default;
+
         public Character(string combatantId, int maxHitPoints, int maxMovementPoints, CharacterAttributes attributes)
         {
             CombatantId = combatantId ?? throw new ArgumentNullException(nameof(combatantId));
@@ -113,7 +120,8 @@ namespace GameRpg.Characters
             IEnumerable<string> acquiredSkillNodeIds,
             float hunger,
             float sanity,
-            IEnumerable<KeyValuePair<string, int>> inventoryEntries)
+            IEnumerable<KeyValuePair<string, int>> inventoryEntries,
+            VisualCharacteristics visuals)
         {
             CurrentHitPoints = Math.Clamp(currentHitPoints, 0, MaxHitPoints);
             AvailableSkillPoints = availableSkillPoints;
@@ -126,6 +134,7 @@ namespace GameRpg.Characters
 
             Hunger = hunger;
             Sanity = sanity;
+            Visuals = visuals;
 
             foreach (var entry in inventoryEntries)
             {

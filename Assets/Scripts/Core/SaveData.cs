@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using GameRpg.Characters;
+using UnityEngine;
 
 namespace GameRpg.Core
 {
@@ -36,6 +38,10 @@ namespace GameRpg.Core
         public int availableSkillPoints;
         public List<string> acquiredSkillNodeIds = new List<string>();
         public List<InventoryEntry> inventory = new List<InventoryEntry>();
+        public BodyType bodyType;
+        public SkinTone skinTone;
+        public HairStyle hairStyle;
+        public Color hairColor;
     }
 
     [Serializable]

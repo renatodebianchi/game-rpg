@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 538b9c5f759e2134aa12e91b7dfae403, type: 3}
+  m_Name: combatant_starter_kit
+  m_EditorClassIdentifier: GameRpg.Runtime::GameRpg.World.EquipmentKitDefinition
+  orientation: 0
+  items:
+  - resource: {fileID: 11400000, guid: 0b8af8f2ba243a64c8f82eb494ef3b99, type: 2}
+    quantity: 1
+  - resource: {fileID: 11400000, guid: 70fc049767d180040bff3ef65625370d, type: 2}
+    quantity: 1
