@@ -221,7 +221,7 @@ quedas de frame perceptíveis ao avançar o tempo simulado, conforme o orçament
 - [X] T060 Completar a integração de save/load cobrindo Character (incl. respec), Skills, Survival e World/Reputation (incl. `isPermanentlyInactive`) conforme [contracts/save-data-contract.md](./contracts/save-data-contract.md) em `Assets/Scripts/Core/SaveSystem.cs` (estende T012)
 - [X] T061 [P] Teste PlayMode para o ciclo completo salvar → carregar e sua idempotência em `Assets/Tests/PlayMode/SaveLoadRoundTripTests.cs`
 - [ ] T062 [P] Validar o orçamento de performance (60 fps, <100ms de input) de ponta a ponta, com todas as histórias integradas simultaneamente (exploração, combate, árvore de habilidades, sobrevivência e simulação de mundo rodando juntas), conforme [plan.md](./plan.md#technical-context) — consolida e reconfirma as validações incrementais já feitas em cada checkpoint de história (Princípio IV)
-- [ ] T063 Executar a validação completa de [quickstart.md](./quickstart.md) (testes automatizados + os 4 blocos de validação manual por história)
+- [X] T063 Executar a validação completa de [quickstart.md](./quickstart.md) (testes automatizados + os 4 blocos de validação manual por história)
 
 ---
 
