@@ -4,8 +4,9 @@ namespace GameRpg.Skills
 {
     /// <summary>
     /// A usable capability granted by a SkillNodeDefinition once acquired (FR-007).
-    /// Combat-affecting capabilities plug into Combat.ActionResolver via
-    /// DamageModifier; non-combat capabilities (world interactions) can be
+    /// Combat-affecting capabilities plug into any Combat.IDamageModifierRegistry
+    /// (e.g. Combat.RealTimeActionExecutor) via DamageModifier; non-combat
+    /// capabilities (world interactions) can be
     /// extended here later without touching CapabilityResolver's resolution logic.
     /// </summary>
     public class SkillCapability

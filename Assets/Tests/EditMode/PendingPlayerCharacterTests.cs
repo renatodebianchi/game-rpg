@@ -7,7 +7,7 @@ namespace GameRpg.Tests.EditMode
     public class PendingPlayerCharacterTests
     {
         private static Character CreateCharacter(string id) =>
-            new Character(id, maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes(8, 8, 8, 8));
+            new Character(id, maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes(8, 8, 8, 8));
 
         [TearDown]
         public void ClearPendingCharacterBetweenTests()

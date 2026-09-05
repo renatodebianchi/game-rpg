@@ -78,7 +78,7 @@ namespace GameRpg.Characters
         }
 
         /// <summary>Applies a sanity penalty (hallucinations/mental-test penalty) to this character's own outgoing damage (FR-011, FR-021).</summary>
-        public int ModifyOutgoingDamage(ICombatant attacker, int baseDamage)
+        public int ModifyOutgoingDamage(IRealTimeCombatant attacker, int baseDamage)
         {
             if (!(attacker is Character character) || character != _character)
             {

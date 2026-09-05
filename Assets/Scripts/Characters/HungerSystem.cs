@@ -94,7 +94,7 @@ namespace GameRpg.Characters
         }
 
         /// <summary>Applies a hunger penalty to this character's own outgoing damage (FR-009, FR-021).</summary>
-        public int ModifyOutgoingDamage(ICombatant attacker, int baseDamage)
+        public int ModifyOutgoingDamage(IRealTimeCombatant attacker, int baseDamage)
         {
             if (!(attacker is Character character) || character != _character)
             {

@@ -8,7 +8,7 @@ namespace GameRpg.Tests.EditMode
     public class SanitySystemTests
     {
         private static Character CreateCharacter() =>
-            new Character("player", maxHitPoints: 10, maxMovementPoints: 4, new CharacterAttributes());
+            new Character("player", maxHitPoints: 10, maxTechPoints: 4, new CharacterAttributes());
 
         [Test]
         public void DisturbingEvent_ReducesSanity()

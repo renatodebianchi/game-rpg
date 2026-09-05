@@ -30,7 +30,7 @@ namespace GameRpg.Tests.PlayMode
             profile.AttributeAllocation.TryChangeAttribute(AttributeKind.Dexterity, 15);
             profile.VisualCharacteristics = new VisualCharacteristics { BodyType = BodyType.Sturdy, SkinTone = SkinTone.Dark };
 
-            var finalizedCharacter = new Character("player", maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes());
+            var finalizedCharacter = new Character("player", maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes());
             profile.Finalize(finalizedCharacter, kits);
 
             PendingPlayerCharacter.Set(finalizedCharacter);

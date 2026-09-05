@@ -4,12 +4,12 @@ namespace GameRpg.Combat
 {
     public readonly struct CombatantHarmedEvent
     {
-        public readonly ICombatant Combatant;
+        public readonly IRealTimeCombatant Combatant;
         public readonly string LinkedNpcId;
         public readonly int DamageAmount;
         public readonly bool WasDefeated;
 
-        public CombatantHarmedEvent(ICombatant combatant, string linkedNpcId, int damageAmount, bool wasDefeated)
+        public CombatantHarmedEvent(IRealTimeCombatant combatant, string linkedNpcId, int damageAmount, bool wasDefeated)
         {
             Combatant = combatant;
             LinkedNpcId = linkedNpcId;
@@ -19,28 +19,29 @@ namespace GameRpg.Combat
     }
 
     /// <summary>
-    /// Reacts to a CombatEncounter reaching a terminal state (FR-003): grants
-    /// rewards on victory, marks a checkpoint on defeat, and simply lets a
-    /// successful flee exit back to exploration. Also re-exposes per-combatant
-    /// damage/defeat events enriched with LinkedNpcId, which World.ForcedCombatReputationBridge
-    /// (US4, T057) subscribes to in order to apply FR-022.
+    /// Reacts to a CombatArenaEncounter reaching a terminal state (FR-014):
+    /// grants rewards on victory, marks a checkpoint on defeat, and simply
+    /// lets a successful flee exit back to exploration. Also re-exposes
+    /// per-combatant damage/defeat events enriched with LinkedNpcId, which
+    /// World.ForcedCombatReputationBridge subscribes to in order to apply
+    /// FR-022 (preserved unchanged from feature 001).
     /// </summary>
     public class CombatOutcomeHandler
     {
-        private readonly CombatEncounter _encounter;
+        private readonly CombatArenaEncounter _encounter;
 
         public event Action<int> VictoryRewardsGranted;
         public event Action DefeatCheckpointRestored;
         public event Action<CombatantHarmedEvent> CombatantHarmed;
 
-        public CombatOutcomeHandler(CombatEncounter encounter)
+        public CombatOutcomeHandler(CombatArenaEncounter encounter)
         {
             _encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             _encounter.ParticipantDamaged += OnParticipantDamaged;
             _encounter.ParticipantDefeated += OnParticipantDefeated;
         }
 
-        /// <summary>Call once per frame/turn-end (or from a state-change hook) to react to a just-reached terminal state.</summary>
+        /// <summary>Call once per frame (or from a state-change hook) to react to a just-reached terminal state.</summary>
         public void HandleStateIfTerminal(int experienceRewardOnVictory)
         {
             switch (_encounter.State)
@@ -57,7 +58,7 @@ namespace GameRpg.Combat
             }
         }
 
-        private void OnParticipantDamaged(ICombatant combatant, int amount)
+        private void OnParticipantDamaged(IRealTimeCombatant combatant, int amount)
         {
             CombatantHarmed?.Invoke(new CombatantHarmedEvent(
                 combatant,
@@ -66,12 +67,12 @@ namespace GameRpg.Combat
                 wasDefeated: combatant.IsDefeated));
         }
 
-        private void OnParticipantDefeated(ICombatant combatant)
+        private void OnParticipantDefeated(IRealTimeCombatant combatant)
         {
             // Already covered by OnParticipantDamaged's wasDefeated flag for the
-            // triggering hit; this handler exists so CombatEncounter's two events
-            // stay independently subscribable without forcing consumers to infer
-            // defeat from damage payloads alone.
+            // triggering hit; this handler exists so CombatArenaEncounter's two
+            // events stay independently subscribable without forcing consumers
+            // to infer defeat from damage payloads alone.
         }
     }
 }

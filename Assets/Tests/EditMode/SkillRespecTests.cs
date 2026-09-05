@@ -9,7 +9,7 @@ namespace GameRpg.Tests.EditMode
     {
         private static Character CreateCharacter(int skillPoints = 10)
         {
-            var character = new Character("player", maxHitPoints: 10, maxMovementPoints: 4, new CharacterAttributes());
+            var character = new Character("player", maxHitPoints: 10, maxTechPoints: 4, new CharacterAttributes());
             character.GrantSkillPoints(skillPoints);
             return character;
         }

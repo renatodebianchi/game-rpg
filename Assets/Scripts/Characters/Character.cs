@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using GameRpg.Combat;
-using GameRpg.Combat.Grid;
 
 namespace GameRpg.Characters
 {
@@ -10,7 +9,7 @@ namespace GameRpg.Characters
     /// Skill node content itself lives in ScriptableObject assets (Skills.SkillNodeDefinition);
     /// this class only tracks which node ids have been acquired, per the save-data contract.
     /// </summary>
-    public class Character : ICombatant
+    public class Character : IRealTimeCombatant
     {
         private readonly HashSet<string> _acquiredSkillNodeIds = new HashSet<string>();
 
@@ -20,8 +19,10 @@ namespace GameRpg.Characters
         public int MaxHitPoints { get; private set; }
         public int CurrentHitPoints { get; private set; }
 
-        public TurnResources TurnResources { get; }
-        public GridCoordinate Position { get; set; }
+        public CombatantActionState ActionState { get; }
+
+        /// <summary>Continuous position along the current BattleArena's horizontal axis (FR-002).</summary>
+        public float PositionX { get; set; }
 
         public bool IsDefeated => CurrentHitPoints <= 0;
 
@@ -42,12 +43,12 @@ namespace GameRpg.Characters
         /// </summary>
         public VisualCharacteristics Visuals { get; set; } = VisualCharacteristics.Default;
 
-        public Character(string combatantId, int maxHitPoints, int maxMovementPoints, CharacterAttributes attributes)
+        public Character(string combatantId, int maxHitPoints, int maxTechPoints, CharacterAttributes attributes)
         {
             CombatantId = combatantId ?? throw new ArgumentNullException(nameof(combatantId));
             MaxHitPoints = maxHitPoints;
             CurrentHitPoints = maxHitPoints;
-            TurnResources = new TurnResources(maxMovementPoints);
+            ActionState = new CombatantActionState(maxTechPoints);
             Attributes = attributes;
         }
 

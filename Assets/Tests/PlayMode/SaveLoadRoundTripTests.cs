@@ -32,7 +32,7 @@ namespace GameRpg.Tests.PlayMode
         {
             var saveSystem = new SaveSystem(_tempSaveDirectory);
 
-            var character = new Character("player", maxHitPoints: 20, maxMovementPoints: 4,
+            var character = new Character("player", maxHitPoints: 20, maxTechPoints: 4,
                 new CharacterAttributes(strength: 5, dexterity: 4, intellect: 3, willpower: 2));
             character.ApplyDamage(7);
             character.GrantSkillPoints(5);
@@ -64,7 +64,7 @@ namespace GameRpg.Tests.PlayMode
             saveSystem.SaveToDisk(saveData);
 
             // Fresh, blank objects representing a newly loaded session.
-            var loadedCharacter = new Character("player", maxHitPoints: 20, maxMovementPoints: 4, new CharacterAttributes());
+            var loadedCharacter = new Character("player", maxHitPoints: 20, maxTechPoints: 4, new CharacterAttributes());
             var loadedWorldClock = new WorldClock();
             var loadedVillageA = new Community("village_a", Array.Empty<string>());
 

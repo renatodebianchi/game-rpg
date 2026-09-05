@@ -9,8 +9,8 @@ EditorBuildSettings:
     path: Assets/Scenes/Exploration.unity
     guid: be6e06b2e6d31d3448a781ae7a67d2d4
   - enabled: 1
-    path: Assets/Scenes/CombatEncounterTest.unity
-    guid: 485d13ee2f52a55449e9d50d072f0c3a
+    path: Assets/Scenes/BattleArena.unity
+    guid: 57acef4023a345547a2169f2b65d3e54
   - enabled: 1
     path: Assets/Scenes/SkillTreeDemo.unity
     guid: 7d2e4532291fe764e9c7f39022666372

@@ -32,7 +32,7 @@ namespace GameRpg.Demo
         private void Start()
         {
             EnsureCamera();
-            _player = new Character("player", maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes(4, 4, 4, 4));
+            _player = new Character("player", maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes(4, 4, 4, 4));
             _player.GrantSkillPoints(startingSkillPoints);
             _skillTreeService = new SkillTreeService(allNodes);
 

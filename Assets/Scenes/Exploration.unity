@@ -149,6 +149,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GameRpg.Runtime::GameRpg.Demo.ExplorationCharacterController
   moveSpeed: 4
+  walkBobAmplitude: 0.12
+  walkBobFrequency: 9
+  walkAnimationBlendSpeed: 12
 --- !u!4 &940555289
 Transform:
   m_ObjectHideFlags: 0
@@ -174,6 +177,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2058178299}
   - component: {fileID: 2058178298}
+  - component: {fileID: 2058178300}
   m_Layer: 0
   m_Name: IsometricExplorationCamera
   m_TagString: MainCamera
@@ -247,6 +251,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2058178300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2058178297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e51f064fbb848bc40a32186642d5449e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GameRpg.Runtime::GameRpg.Demo.BoundedFollowCamera
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

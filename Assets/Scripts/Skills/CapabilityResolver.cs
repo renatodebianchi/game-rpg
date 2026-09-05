@@ -42,16 +42,17 @@ namespace GameRpg.Skills
 
         /// <summary>
         /// Registers every damage-affecting capability the character has acquired
-        /// into <paramref name="actionResolver"/> (extends User Story 1's combat
-        /// with User Story 2's build choices, per tasks.md T035).
+        /// into <paramref name="damageModifierRegistry"/> (extends the combat
+        /// action executor with skill-tree build choices, per tasks.md T035 of
+        /// feature 001, adapted for feature 004's real-time executor).
         /// </summary>
-        public void ApplyAcquiredCapabilities(Character character, ActionResolver actionResolver)
+        public void ApplyAcquiredCapabilities(Character character, IDamageModifierRegistry damageModifierRegistry)
         {
             foreach (var capability in ResolveAcquiredCapabilities(character))
             {
                 if (capability.DamageModifier != null)
                 {
-                    actionResolver.RegisterDamageModifier(capability.DamageModifier);
+                    damageModifierRegistry.RegisterDamageModifier(capability.DamageModifier);
                 }
             }
         }

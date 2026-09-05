@@ -7,7 +7,7 @@ namespace GameRpg.Tests.EditMode
     public class VisualCharacteristicsTests
     {
         private static Character CreateCharacter() =>
-            new Character("player", maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes());
+            new Character("player", maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes());
 
         private static EquipmentKitDefinition[] CreateKits()
         {

@@ -36,7 +36,7 @@ namespace GameRpg.Demo
 
         private static Character CreateDefaultCharacter()
         {
-            return new Character("player", maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes(8, 8, 8, 8));
+            return new Character("player", maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes(8, 8, 8, 8));
         }
 
         private void SpawnSprite()
@@ -47,14 +47,10 @@ namespace GameRpg.Demo
             var rootGameObject = new GameObject("PlayerCharacter");
             _rootTransform = rootGameObject.transform;
             _rootTransform.position = Vector3.zero;
-
-            // Billboard the flat sprite to face the scene's isometric camera
-            // (Assets/Editor/ProjectBootstrap.cs, CreateExplorationScene) so it reads
-            // as an upright character instead of an edge-on plane.
-            if (Camera.main != null)
-            {
-                _rootTransform.rotation = Camera.main.transform.rotation;
-            }
+            // Feature 004: the scene is a true 2D side-view (identity camera
+            // rotation) now, not an isometric 3D one — no billboard needed,
+            // the sprite already faces the camera by construction.
+            _rootTransform.rotation = Quaternion.identity;
 
             // The visual is a child so the walk animation (bob/squash below) can
             // offset it in local space without disturbing the root's world
@@ -67,6 +63,9 @@ namespace GameRpg.Demo
             _spriteRenderer = visualGameObject.AddComponent<SpriteRenderer>();
             _spriteRenderer.sprite = sprite;
             _spriteRenderer.color = appearance.TintColor;
+
+            var boundedCamera = Camera.main != null ? Camera.main.GetComponent<BoundedFollowCamera>() : null;
+            boundedCamera?.SetTarget(_rootTransform);
         }
 
         private void Update()
@@ -87,7 +86,9 @@ namespace GameRpg.Demo
             var isMoving = horizontal != 0f || vertical != 0f;
             if (isMoving)
             {
-                var direction = new Vector3(horizontal, 0f, vertical).normalized;
+                // 2D side-view: horizontal input moves along X, vertical input
+                // along Y (screen-up/down) — there is no Z depth anymore.
+                var direction = new Vector3(horizontal, vertical, 0f).normalized;
                 _rootTransform.position += direction * (moveSpeed * Time.deltaTime);
 
                 if (horizontal != 0f)

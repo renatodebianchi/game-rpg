@@ -35,7 +35,7 @@ namespace GameRpg.Demo
         {
             EnsureCamera();
 
-            _player = new Character("player", maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes(4, 4, 4, 4));
+            _player = new Character("player", maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes(4, 4, 4, 4));
             _player.Inventory.Add("food", 5);
 
             _config = BalancingConfig.CreateForTesting();

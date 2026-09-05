@@ -38,7 +38,7 @@ namespace GameRpg.Tests.PlayMode
             };
 
             // Finalize.
-            var character = new Character("player", maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes());
+            var character = new Character("player", maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes());
             profile.Finalize(character, kits);
 
             Assert.AreEqual(15, character.Attributes.Strength);

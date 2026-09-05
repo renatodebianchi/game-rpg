@@ -16,21 +16,29 @@ namespace GameRpg.Editor
 {
     /// <summary>
     /// One-off setup for Editor-only assets that are far more reliable to
-    /// generate through the Editor API than to hand-author as raw YAML
-    /// (tasks.md T003: URP asset + base isometric camera in Exploration.unity).
+    /// generate through the Editor API than to hand-author as raw YAML.
+    /// Since feature 004, the project uses the URP **2D Renderer** and a pure
+    /// 2D side-view perspective everywhere (research.md, "Decision: URP 2D
+    /// Renderer") — the old isometric 3D camera setup is gone.
     /// Run headlessly via:
     ///   Unity -batchmode -quit -projectPath . -executeMethod GameRpg.Editor.ProjectBootstrap.SetupProject
     /// </summary>
     public static class ProjectBootstrap
     {
-        private const string UrpAssetPath = "Assets/Settings/GameRpgUrpAsset.asset";
-        private const string RendererDataPath = "Assets/Settings/GameRpgUrpRenderer.asset";
+        private const string UrpAssetPath = "Assets/Settings/GameRpgUrpAsset2D.asset";
+        private const string RendererDataPath = "Assets/Settings/GameRpgUrpRenderer2D.asset";
+        private const string LegacyUrpAssetPath = "Assets/Settings/GameRpgUrpAsset.asset";
+        private const string LegacyRendererDataPath = "Assets/Settings/GameRpgUrpRenderer.asset";
         private const string ExplorationScenePath = "Assets/Scenes/Exploration.unity";
-        private const string CombatEncounterTestScenePath = "Assets/Scenes/CombatEncounterTest.unity";
+        private const string BattleArenaScenePath = "Assets/Scenes/BattleArena.unity";
+        private const string LegacyCombatEncounterTestScenePath = "Assets/Scenes/CombatEncounterTest.unity";
         private const string SkillTreeDemoScenePath = "Assets/Scenes/SkillTreeDemo.unity";
         private const string SurvivalDemoScenePath = "Assets/Scenes/SurvivalDemo.unity";
         private const string ReputationEconomyDemoScenePath = "Assets/Scenes/ReputationEconomyDemo.unity";
         private const string CharacterCreationDemoScenePath = "Assets/Scenes/CharacterCreationDemo.unity";
+
+        private const float ExplorationMapWidth = 20f;
+        private const float ExplorationMapHeight = 12f;
 
         private const string SkillContentDirectory = "Assets/Data/Skills";
         private const string WorldContentDirectory = "Assets/Data/World";
@@ -41,11 +49,11 @@ namespace GameRpg.Editor
         {
             CreateUrpAsset();
             CreateExplorationScene();
-            CreateCombatEncounterTestScene();
+            CreateBattleArenaScene();
             CreateInitialSkillContent();
             CreateInitialWorldContent();
             CreateInitialEquipmentKitContent();
-            WireCombatDemoIntoTestScene();
+            WireBattleArenaDemoScene();
             WireSkillTreeDemoScene();
             WireSurvivalDemoScene();
             WireReputationEconomyDemoScene();
@@ -72,6 +80,13 @@ namespace GameRpg.Editor
                 controllerGameObject.AddComponent<ExplorationCharacterController>();
             }
 
+            var camera = Camera.main;
+            if (camera != null && camera.GetComponent<BoundedFollowCamera>() == null)
+            {
+                var boundedCamera = camera.gameObject.AddComponent<BoundedFollowCamera>();
+                boundedCamera.SetWorldBounds(0f, ExplorationMapWidth, 0f, ExplorationMapHeight);
+            }
+
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
         }
@@ -86,7 +101,7 @@ namespace GameRpg.Editor
             var scenePaths = new[]
             {
                 ExplorationScenePath,
-                CombatEncounterTestScenePath,
+                BattleArenaScenePath,
                 SkillTreeDemoScenePath,
                 SurvivalDemoScenePath,
                 ReputationEconomyDemoScenePath,
@@ -100,18 +115,18 @@ namespace GameRpg.Editor
         }
 
         /// <summary>
-        /// Adds a CombatDemoController to CombatEncounterTest.unity so the scene
+        /// Adds a BattleArenaDemoController to BattleArena.unity so the scene
         /// is playable/visual for manual testing (see quickstart.md's combat
         /// validation section) without any hand-authored scene content.
         /// </summary>
-        private static void WireCombatDemoIntoTestScene()
+        private static void WireBattleArenaDemoScene()
         {
-            var scene = EditorSceneManager.OpenScene(CombatEncounterTestScenePath, OpenSceneMode.Single);
+            var scene = EditorSceneManager.OpenScene(BattleArenaScenePath, OpenSceneMode.Single);
 
-            if (GameObject.Find("CombatDemoController") == null)
+            if (GameObject.Find("BattleArenaDemoController") == null)
             {
-                var demoGameObject = new GameObject("CombatDemoController");
-                demoGameObject.AddComponent<CombatDemoController>();
+                var demoGameObject = new GameObject("BattleArenaDemoController");
+                demoGameObject.AddComponent<BattleArenaDemoController>();
             }
 
             EditorSceneManager.SaveScene(scene);
@@ -441,6 +456,21 @@ namespace GameRpg.Editor
 
         private static void CreateUrpAsset()
         {
+            // Feature 004 pivot: drop the 3D Universal Renderer asset entirely
+            // in favor of the URP 2D Renderer (research.md, "Decision: URP 2D
+            // Renderer") — new asset paths, old ones deleted rather than
+            // mutated in place (UniversalRenderPipelineAsset has no public API
+            // to swap its renderer data post-creation).
+            if (AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(LegacyUrpAssetPath) != null)
+            {
+                AssetDatabase.DeleteAsset(LegacyUrpAssetPath);
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<UniversalRendererData>(LegacyRendererDataPath) != null)
+            {
+                AssetDatabase.DeleteAsset(LegacyRendererDataPath);
+            }
+
             var directory = Path.GetDirectoryName(UrpAssetPath);
             if (!string.IsNullOrEmpty(directory) && !AssetDatabase.IsValidFolder(directory))
             {
@@ -448,10 +478,10 @@ namespace GameRpg.Editor
                 AssetDatabase.Refresh();
             }
 
-            var rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(RendererDataPath);
+            var rendererData = AssetDatabase.LoadAssetAtPath<Renderer2DData>(RendererDataPath);
             if (rendererData == null)
             {
-                rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+                rendererData = ScriptableObject.CreateInstance<Renderer2DData>();
                 AssetDatabase.CreateAsset(rendererData, RendererDataPath);
             }
 
@@ -469,6 +499,14 @@ namespace GameRpg.Editor
 
         private static void CreateExplorationScene()
         {
+            // Feature 004: the isometric 3D camera is gone — plain 2D
+            // side-view (identity rotation, looking down -Z), same
+            // perspective the battle arena uses (FR-011).
+            if (File.Exists(LegacyCombatEncounterTestScenePath))
+            {
+                AssetDatabase.DeleteAsset(LegacyCombatEncounterTestScenePath);
+            }
+
             if (File.Exists(ExplorationScenePath))
             {
                 return;
@@ -476,13 +514,12 @@ namespace GameRpg.Editor
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var cameraGameObject = new GameObject("IsometricExplorationCamera");
+            var cameraGameObject = new GameObject("ExplorationCamera");
             var camera = cameraGameObject.AddComponent<Camera>();
             camera.orthographic = true;
             camera.orthographicSize = 6f;
-            // Classic isometric look: 45 degrees around Y, ~35.264 degrees down (arctan(1/sqrt(2))).
-            cameraGameObject.transform.rotation = Quaternion.Euler(35.264f, 45f, 0f);
-            cameraGameObject.transform.position = new Vector3(10f, 10f, -10f);
+            cameraGameObject.transform.rotation = Quaternion.identity;
+            cameraGameObject.transform.position = new Vector3(ExplorationMapWidth / 2f, ExplorationMapHeight / 2f, -10f);
             cameraGameObject.tag = "MainCamera";
 
             var directory = Path.GetDirectoryName(ExplorationScenePath);
@@ -494,34 +531,34 @@ namespace GameRpg.Editor
             EditorSceneManager.SaveScene(scene, ExplorationScenePath);
         }
 
-        private static void CreateCombatEncounterTestScene()
+        private static void CreateBattleArenaScene()
         {
-            // T028: a bare isometric-camera scene used as the harness for manual
-            // combat validation (see quickstart.md). Spawning combatants/UI into
-            // it is done by MonoBehaviour bootstrap code, not baked into the
-            // scene file, so it stays trivial to keep in sync with CombatEncounter.
-            if (File.Exists(CombatEncounterTestScenePath))
+            // A bare 2D side-view camera scene used as the harness for manual
+            // combat validation (see quickstart.md). Spawning combatants/UI
+            // into it is done by BattleArenaDemoController at runtime, not
+            // baked into the scene file, so it stays trivial to keep in sync.
+            if (File.Exists(BattleArenaScenePath))
             {
                 return;
             }
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var cameraGameObject = new GameObject("CombatCamera");
+            var cameraGameObject = new GameObject("BattleArenaCamera");
             var camera = cameraGameObject.AddComponent<Camera>();
             camera.orthographic = true;
             camera.orthographicSize = 6f;
-            cameraGameObject.transform.rotation = Quaternion.Euler(35.264f, 45f, 0f);
-            cameraGameObject.transform.position = new Vector3(10f, 10f, -10f);
+            cameraGameObject.transform.rotation = Quaternion.identity;
+            cameraGameObject.transform.position = new Vector3(6f, 1f, -10f);
             cameraGameObject.tag = "MainCamera";
 
-            var directory = Path.GetDirectoryName(CombatEncounterTestScenePath);
+            var directory = Path.GetDirectoryName(BattleArenaScenePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            EditorSceneManager.SaveScene(scene, CombatEncounterTestScenePath);
+            EditorSceneManager.SaveScene(scene, BattleArenaScenePath);
         }
     }
 }

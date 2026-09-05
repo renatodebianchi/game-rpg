@@ -41,7 +41,7 @@ namespace GameRpg.UI
         {
             EnsureCamera();
 
-            _character = new Character("player", maxHitPoints: 20, maxMovementPoints: 3, new CharacterAttributes());
+            _character = new Character("player", maxHitPoints: 20, maxTechPoints: 3, new CharacterAttributes());
             _profile = new CharacterCreationProfile();
 
             BuildUi();
