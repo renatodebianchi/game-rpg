@@ -14,33 +14,39 @@ namespace GameRpg.Demo
     public class BoundedFollowCamera : MonoBehaviour
     {
         private Camera _camera;
-        private Transform _target;
-        private float _minX;
-        private float _maxX;
-        private float _minY;
-        private float _maxY;
+
+        // [SerializeField] so values assigned by an Editor-time bootstrap script (via
+        // SetTarget/SetWorldBounds, before the scene is saved) actually persist into the
+        // saved scene — plain private fields are dropped by Unity's serializer, which
+        // silently left this camera with a null target and zeroed bounds at runtime
+        // (the camera never moved at all, having nothing to follow or clamp against).
+        [SerializeField] private Transform target;
+        [SerializeField] private float minX;
+        [SerializeField] private float maxX;
+        [SerializeField] private float minY;
+        [SerializeField] private float maxY;
 
         private void Awake()
         {
             _camera = GetComponent<Camera>();
         }
 
-        public void SetTarget(Transform target)
+        public void SetTarget(Transform newTarget)
         {
-            _target = target;
+            target = newTarget;
         }
 
-        public void SetWorldBounds(float minX, float maxX, float minY, float maxY)
+        public void SetWorldBounds(float newMinX, float newMaxX, float newMinY, float newMaxY)
         {
-            _minX = minX;
-            _maxX = maxX;
-            _minY = minY;
-            _maxY = maxY;
+            minX = newMinX;
+            maxX = newMaxX;
+            minY = newMinY;
+            maxY = newMaxY;
         }
 
         private void LateUpdate()
         {
-            if (_target == null)
+            if (target == null)
             {
                 return;
             }
@@ -48,8 +54,8 @@ namespace GameRpg.Demo
             var halfHeight = _camera.orthographicSize;
             var halfWidth = halfHeight * _camera.aspect;
 
-            var clampedX = ClampAxis(_target.position.x, _minX, _maxX, halfWidth);
-            var clampedY = ClampAxis(_target.position.y, _minY, _maxY, halfHeight);
+            var clampedX = ClampAxis(target.position.x, minX, maxX, halfWidth);
+            var clampedY = ClampAxis(target.position.y, minY, maxY, halfHeight);
 
             transform.position = new Vector3(clampedX, clampedY, transform.position.z);
         }

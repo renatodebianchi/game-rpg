@@ -263,6 +263,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e51f064fbb848bc40a32186642d5449e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GameRpg.Runtime::GameRpg.Demo.BoundedFollowCamera
+  target: {fileID: 0}
+  minX: 0
+  maxX: 20
+  minY: 0
+  maxY: 12
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using GameRpg.Characters;
 using GameRpg.Demo;
+using GameRpg.Mobility;
 using GameRpg.NPCs;
 using GameRpg.Skills;
 using GameRpg.UI;
@@ -36,9 +37,22 @@ namespace GameRpg.Editor
         private const string SurvivalDemoScenePath = "Assets/Scenes/SurvivalDemo.unity";
         private const string ReputationEconomyDemoScenePath = "Assets/Scenes/ReputationEconomyDemo.unity";
         private const string CharacterCreationDemoScenePath = "Assets/Scenes/CharacterCreationDemo.unity";
+        private const string MobilityTestScenePath = "Assets/Scenes/MobilityTest.unity";
 
         private const float ExplorationMapWidth = 20f;
         private const float ExplorationMapHeight = 12f;
+
+        private const float MobilityMapWidth = 24f;
+        private const float MobilityMapHeight = 10f;
+
+        // Close, Dead Cells-style framing — small enough that the map's height/width
+        // both exceed the camera's view span, so BoundedFollowCamera actually tracks
+        // the player on both axes instead of staying centered (see its contract rule 3).
+        private const float MobilityCameraOrthographicSize = 3.5f;
+        private const float MobilityGroundTopY = 0f;
+        private const float MobilityPlatformCenterX = 10f;
+        private const float MobilityPlatformCenterY = 3f;
+        private const float MobilityWallCenterX = 20f;
 
         private const string SkillContentDirectory = "Assets/Data/Skills";
         private const string WorldContentDirectory = "Assets/Data/World";
@@ -50,6 +64,7 @@ namespace GameRpg.Editor
             CreateUrpAsset();
             CreateExplorationScene();
             CreateBattleArenaScene();
+            CreateMobilityTestScene();
             CreateInitialSkillContent();
             CreateInitialWorldContent();
             CreateInitialEquipmentKitContent();
@@ -59,6 +74,7 @@ namespace GameRpg.Editor
             WireReputationEconomyDemoScene();
             WireCharacterCreationDemoScene();
             WireExplorationScene();
+            WireMobilityTestScene();
             RegisterScenesInBuildSettings();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -81,9 +97,18 @@ namespace GameRpg.Editor
             }
 
             var camera = Camera.main;
-            if (camera != null && camera.GetComponent<BoundedFollowCamera>() == null)
+            if (camera != null)
             {
-                var boundedCamera = camera.gameObject.AddComponent<BoundedFollowCamera>();
+                // Re-applied every run, not just on first creation — SetWorldBounds used to
+                // only run inside the "component didn't exist yet" branch, which silently left
+                // the bounds at their serialized default (0,0,0,0) on every later run once the
+                // component already existed, leaving the camera clamped to the origin forever.
+                var boundedCamera = camera.GetComponent<BoundedFollowCamera>();
+                if (boundedCamera == null)
+                {
+                    boundedCamera = camera.gameObject.AddComponent<BoundedFollowCamera>();
+                }
+
                 boundedCamera.SetWorldBounds(0f, ExplorationMapWidth, 0f, ExplorationMapHeight);
             }
 
@@ -106,6 +131,7 @@ namespace GameRpg.Editor
                 SurvivalDemoScenePath,
                 ReputationEconomyDemoScenePath,
                 CharacterCreationDemoScenePath,
+                MobilityTestScenePath,
             };
 
             EditorBuildSettings.scenes = scenePaths
@@ -529,6 +555,138 @@ namespace GameRpg.Editor
             }
 
             EditorSceneManager.SaveScene(scene, ExplorationScenePath);
+        }
+
+        private static void CreateMobilityTestScene()
+        {
+            // A bare 2D side-view camera scene for the mobility test harness
+            // (feature 005, FR-001/FR-014). Ground/platforms/wall and the
+            // player are wired at runtime by WireMobilityTestScene, same
+            // reasoning as CreateBattleArenaScene.
+            if (File.Exists(MobilityTestScenePath))
+            {
+                return;
+            }
+
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var cameraGameObject = new GameObject("MobilityTestCamera");
+            var camera = cameraGameObject.AddComponent<Camera>();
+            camera.orthographic = true;
+            camera.orthographicSize = MobilityCameraOrthographicSize;
+            cameraGameObject.transform.rotation = Quaternion.identity;
+            cameraGameObject.transform.position = new Vector3(MobilityMapWidth / 4f, MobilityMapHeight / 3f, -10f);
+            cameraGameObject.tag = "MainCamera";
+
+            var directory = Path.GetDirectoryName(MobilityTestScenePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            EditorSceneManager.SaveScene(scene, MobilityTestScenePath);
+        }
+
+        /// <summary>
+        /// Builds the mobility test scenario (ground, one elevated platform that
+        /// doubles as the charge-jump's ceiling target, one vertical wall for
+        /// wall-slide/wall-jump, a textured background) and the player
+        /// (PlatformerMovementController), then wires BoundedFollowCamera to
+        /// follow it within the map's bounds (FR-001, FR-011, FR-012, FR-015-style
+        /// clamp reused from feature 004).
+        /// </summary>
+        private static void WireMobilityTestScene()
+        {
+            var scene = EditorSceneManager.OpenScene(MobilityTestScenePath, OpenSceneMode.Single);
+
+            var groundSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Platformer/Resources/Environment/ground_tile.png");
+            var wallSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Platformer/Resources/Environment/wall_tile.png");
+            var backgroundSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Platformer/Resources/Environment/background.png");
+
+            if (GameObject.Find("Background") == null && backgroundSprite != null)
+            {
+                var backgroundGameObject = new GameObject("Background");
+                backgroundGameObject.transform.position = new Vector3(MobilityMapWidth / 2f, MobilityMapHeight / 2f, 1f);
+                var backgroundRenderer = backgroundGameObject.AddComponent<SpriteRenderer>();
+                backgroundRenderer.sprite = backgroundSprite;
+                backgroundRenderer.drawMode = SpriteDrawMode.Tiled;
+                backgroundRenderer.size = new Vector2(MobilityMapWidth * 1.5f, MobilityMapHeight * 1.5f);
+                backgroundRenderer.sortingOrder = -10;
+            }
+
+            if (GameObject.Find("Ground") == null && groundSprite != null)
+            {
+                CreateSolidBlock("Ground", new Vector2(MobilityMapWidth / 2f, MobilityGroundTopY - 0.5f),
+                    new Vector2(MobilityMapWidth, 1f), groundSprite);
+            }
+
+            if (GameObject.Find("Platform") == null && groundSprite != null)
+            {
+                // Also doubles as the ceiling target for the charge-jump (User Story 3):
+                // a crouching player standing beneath it can leap up and hit its underside.
+                CreateSolidBlock("Platform", new Vector2(MobilityPlatformCenterX, MobilityPlatformCenterY),
+                    new Vector2(4f, 1f), groundSprite);
+            }
+
+            if (GameObject.Find("Wall") == null && wallSprite != null)
+            {
+                CreateSolidBlock("Wall", new Vector2(MobilityWallCenterX, 3f), new Vector2(1f, 6f), wallSprite);
+            }
+
+            if (GameObject.Find("PlatformerMovementController") == null)
+            {
+                var playerGameObject = new GameObject("PlatformerMovementController");
+                playerGameObject.transform.position = new Vector3(2f, MobilityGroundTopY + 1f, 0f);
+                var rigidbody = playerGameObject.AddComponent<Rigidbody2D>();
+                rigidbody.gravityScale = 3f;
+                var collider = playerGameObject.AddComponent<BoxCollider2D>();
+                collider.size = new Vector2(0.6f, 0.8f);
+                playerGameObject.AddComponent<PlatformerMovementController>();
+            }
+
+            var camera = Camera.main;
+            if (camera != null)
+            {
+                // Re-applied every run (not just on first creation) so a previously
+                // generated scene still picks up camera-tuning changes.
+                camera.orthographicSize = MobilityCameraOrthographicSize;
+
+                var boundedCamera = camera.GetComponent<BoundedFollowCamera>();
+                if (boundedCamera == null)
+                {
+                    boundedCamera = camera.gameObject.AddComponent<BoundedFollowCamera>();
+                }
+
+                boundedCamera.SetWorldBounds(0f, MobilityMapWidth, 0f, MobilityMapHeight);
+
+                var player = GameObject.Find("PlatformerMovementController");
+                if (player != null)
+                {
+                    boundedCamera.SetTarget(player.transform);
+                }
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>Shared helper: a static, collidable, tiled-texture rectangle — used for the
+        /// mobility test scenario's ground/platform/wall (no Tilemap system needed for this
+        /// simple flat scenario, Princípio V).</summary>
+        private static GameObject CreateSolidBlock(string name, Vector2 center, Vector2 size, Sprite tileSprite)
+        {
+            var blockGameObject = new GameObject(name);
+            blockGameObject.transform.position = new Vector3(center.x, center.y, 0f);
+
+            var collider = blockGameObject.AddComponent<BoxCollider2D>();
+            collider.size = size;
+
+            var renderer = blockGameObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = tileSprite;
+            renderer.drawMode = SpriteDrawMode.Tiled;
+            renderer.size = size;
+
+            return blockGameObject;
         }
 
         private static void CreateBattleArenaScene()
